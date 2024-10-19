@@ -6,8 +6,8 @@ on:
       - main
 
 env:
-  DISCORD_TOKEN: ${{secrets.DISCORD_TOKEN}}
-  TENOR_API: ${{secrets.TENOR_API}}
+  DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+  TENOR_API: ${{ secrets.TENOR_API }}
 
 jobs:
   deploy:
@@ -19,19 +19,20 @@ jobs:
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{secrets.EC2_SSH_KEY}}
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
       - name: Deploy to EC2
-        env:  # Specify the environment variables here
+        env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
           TENOR_API: ${{ secrets.TENOR_API }}
-
         run: |
-          echo "DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}" > /home/ubuntu/Syaa/.env
-          echo "TENOR_API=${{ secrets.TENOR_API }}" > /home/ubuntu/Syaa/.env
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
             # Ensure the directory exists
             mkdir -p /home/ubuntu/Syaa
+
+            # Write the environment variables to the .env file
+            echo "DISCORD_TOKEN=${DISCORD_TOKEN}" > /home/ubuntu/Syaa/.env
+            echo "TENOR_API=${TENOR_API}" >> /home/ubuntu/Syaa/.env
 
             # Run the deployment script
             bash /home/ubuntu/deploy.sh
