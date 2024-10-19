@@ -27,6 +27,8 @@ jobs:
           TENOR_API: ${{ secrets.TENOR_API }}
 
         run: |
+          echo "DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}" > /home/ubuntu/Syaa/.env
+          echo "TENOR_API=${{ secrets.TENOR_API }}" > /home/ubuntu/Syaa/.env
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
             # Ensure the directory exists
             mkdir -p /home/ubuntu/Syaa
