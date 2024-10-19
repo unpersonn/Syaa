@@ -22,6 +22,10 @@ jobs:
           ssh-private-key: ${{secrets.EC2_SSH_KEY}}
 
       - name: Deploy to EC2
+        env:  # Specify the environment variables here
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          TENOR_API: ${{ secrets.TENOR_API }}
+
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
             # Ensure the directory exists
