@@ -22,5 +22,6 @@ jobs:
 
       - name: Deploy to EC2
         run: |
-          echo "DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}" > /home/ubuntu/DiscordBot/.env
+          echo "DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}" > /home/ubuntu/Syaa/.env
+          echo "TENOR_API=${{ secrets.TENOR_API }}" > /home/ubuntu/Syaa/.env
           ssh -o StrictHostKeyChecking=no ubuntu@${{secrets.EC2_PUBLIC_IP}} 'bash -s' < deploy.sh
