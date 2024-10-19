@@ -27,10 +27,6 @@ jobs:
             # Ensure the directory exists
             mkdir -p /home/ubuntu/Syaa
 
-            # Create the .env file with both secrets
-            echo "DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}" > /home/ubuntu/Syaa/.env
-            echo "TENOR_API=${{ secrets.TENOR_API }}" >> /home/ubuntu/Syaa/.env
-
             # Run the deployment script
             bash /home/ubuntu/deploy.sh
           EOF
