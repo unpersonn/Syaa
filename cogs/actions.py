@@ -2,7 +2,10 @@ import discord
 from discord.ext import commands
 import requests
 import random
+from dotenv import load_dotenv
 import os
+
+load_dotenv() # Load environment variables from .env file
 
 # TENOR API KEY
 TENOR_API_KEY = os.getenv('TENOR_API')

@@ -1,6 +1,9 @@
 import discord
 from discord.ext import commands
+from dotenv import load_dotenv
 import os
+
+load_dotenv() # Load environment variables from .env file
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 
@@ -33,6 +36,6 @@ async def on_ready():
 
     
 @bot.tree.command()
-async def ping(interaction: discord.Interaction):
-    await interaction.response.send_message(f"{interaction.client.ws.latency}")
+async def prefix(interaction: discord.Interaction):
+    await interaction.response.send_message(f"The current bot prefix is: {prefix}")
 bot.run(TOKEN)
