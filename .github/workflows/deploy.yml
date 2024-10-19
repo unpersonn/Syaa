@@ -5,10 +5,6 @@ on:
     branches:
       - main
 
-env:
-  DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
-  TENOR_API: ${{ secrets.TENOR_API }}
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -22,18 +18,7 @@ jobs:
           ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
       - name: Deploy to EC2
-        env:
-          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
-          TENOR_API: ${{ secrets.TENOR_API }}
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
-            # Ensure the directory exists
-            mkdir -p /home/ubuntu/Syaa
-
-            # Write the environment variables to the .env file
-            echo "DISCORD_TOKEN=${DISCORD_TOKEN}" > /home/ubuntu/Syaa/.env
-            echo "TENOR_API=${TENOR_API}" >> /home/ubuntu/Syaa/.env
-
-            # Run the deployment script
             bash /home/ubuntu/deploy.sh
           EOF
