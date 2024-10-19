@@ -32,5 +32,5 @@ jobs:
             echo "TENOR_API=${{ secrets.TENOR_API }}" >> /home/ubuntu/Syaa/.env
 
             # Run the deployment script
-            bash /home/ubuntu/Syaa/deploy.sh
+            bash /home/ubuntu/deploy.sh
           EOF
