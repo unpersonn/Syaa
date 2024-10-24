@@ -193,7 +193,7 @@ class Actions(commands.Cog):
             await ctx.send("You need to mention someone to pat!")
             return # exit the command early to prevent further errors
         else:
-            gif_url = self.get_gif("anime pats") # fetch a random paat anime gif
+            gif_url = self.get_gif("cute anime pats") # fetch a random paat anime gif
             if gif_url:
                 embed = discord.Embed(
                     description = f"{ctx.author.name} shot {member.name}",
