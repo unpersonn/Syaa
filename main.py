@@ -20,6 +20,8 @@ async def on_ready():
         await bot.load_extension("cogs.fun")
         await bot.load_extension("cogs.moderation")
         await bot.load_extension("cogs.actions")
+        await bot.load_extension("cogs.roleplay")
+        await bot.load_extension("cogs.chatbot")
         print("cog(s) has loaded successfully")
 
     except Exception as e:
