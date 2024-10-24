@@ -187,7 +187,7 @@ class Actions(commands.Cog):
                 await ctx.send("You don't even have a gun nub!")
 
     # pat
-    @commands.command(name="shoot", help="shoots the mentioned user!")
+    @commands.command(name="pat", help="pats the mentioned user!")
     async def pat(self, ctx, member: discord.Member = None):
         if member is None:
             await ctx.send("You need to mention someone to pat!")
