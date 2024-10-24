@@ -186,6 +186,29 @@ class Actions(commands.Cog):
             else:
                 await ctx.send("You don't even have a gun nub!")
 
+    # pat
+    @commands.command(name="shoot", help="shoots the mentioned user!")
+    async def pat(self, ctx, member: discord.Member = None):
+        if member is None:
+            await ctx.send("You need to mention someone to pat!")
+            return # exit the command early to prevent further errors
+        else:
+            gif_url = self.get_gif("anime pats") # fetch a random paat anime gif
+            if gif_url:
+                embed = discord.Embed(
+                    description = f"{ctx.author.name} shot {member.name}",
+                    color = discord.Color.pink()
+                )
+                embed.set_image(url=gif_url)
+                if member.id != 1025969591165403146:
+                    embed.set_footer(text = "pat unperson :>")
+                else:
+                    embed.set_footer(text = "yay >_<")
+
+                await ctx.send(embed=embed)
+            else:
+                await ctx.send("No pats for you!")
+
 
 
 async def setup(bot):
