@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv() # Load environment variables from .env file
+# test
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 
