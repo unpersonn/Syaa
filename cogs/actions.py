@@ -1,215 +1,197 @@
+"""Action commands such as cuddle, hug, and more.
+
+All commands are implemented as hybrid commands so they can be invoked
+either via prefix or as slash commands.  A shared helper handles the
+repeated work of fetching GIFs and composing the embeds.
+"""
+
+from __future__ import annotations
+
+import os
+import random
+from typing import Optional
+
+import aiohttp
 import discord
 from discord.ext import commands
-import requests
-import random
 from dotenv import load_dotenv
-import os
 
-load_dotenv() # Load environment variables from .env file
 
-# TENOR API KEY
-TENOR_API_KEY = os.getenv('TENOR_API')
+load_dotenv()
+TENOR_API_KEY = os.getenv("TENOR_API")
+
 
 class Actions(commands.Cog):
-    def __init__(self,bot):
+    """Cog providing various interaction commands."""
+
+    def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
 
-    def get_gif(self, search_term):
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
 
-        # fetch random gif based on search term
-        url = f'https://tenor.googleapis.com/v2/search?q={search_term}&key={TENOR_API_KEY}&limit=100'
-        try:
-            response = requests.get(url)
-            if response.status_code == 200:
-                data = response.json()
-               # print(f"Tenor API Response: {data}") # debugging: print API response #
-                if "results" in data and len(data["results"]) > 0:
-                    selected_result = random.choice(data["results"])
+    async def get_gif(self, search_term: str) -> Optional[str]:
+        """Fetch a random GIF URL from Tenor for ``search_term``."""
 
-                    # access different media formats
-                    # you can choose any of the available formats; here we will use the 'gif' key
-                    if "media_formats" in selected_result:
-                        gif_url = selected_result["media_formats"].get("gif",{}).get("url")
-                        if gif_url:
-                            return gif_url
-                        else:
-                            print("No GIF URL found in media formats.")  # Debugging
-                            return None
-                    else:
-                        print("No media formats found in the result.")  # Debugging
-                        return None
-                else:
-                    print("No results found in Tenor API response.")  # Debugging
+        url = (
+            "https://tenor.googleapis.com/v2/search"
+            f"?q={search_term}&key={TENOR_API_KEY}&limit=100"
+        )
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status != 200:
                     return None
-            else:
-                print(f"Failed to fetch GIF. Status code: {response.status_code}")  # Debugging
-                return None
+                data = await response.json()
+        results = data.get("results", [])
+        if not results:
+            return None
+        choice = random.choice(results)
+        media = choice.get("media_formats", {})
+        return media.get("gif", {}).get("url")
 
-        except Exception as e:
-            print(f"Error fetching GIF from Tenor: {str(e)}")
-        
-    # cuddle
-    @commands.command(name="cuddle", help="Cuddles the mentioned user!")
-    async def cuddle(self, ctx, member: discord.Member = None):
+    async def _action(
+        self,
+        ctx: commands.Context,
+        member: Optional[discord.Member],
+        verb: str,
+        sentence: str,
+        search_term: str,
+        footer_other: str,
+        footer_self: str,
+        failure: str,
+    ) -> None:
+        """Generic helper used by the action commands."""
+
         if member is None:
-            await ctx.send("You need to mention someone to cuddle!")
-            return # exit the command early to prevent further errors
-        else:
-            gif_url = self.get_gif("cute cuddle anime") # fetch a random cuddle anime gif
-            if gif_url:
-                embed = discord.Embed(
-                    description = f"{ctx.author.name} cuddles {member.name}",
-                    color = discord.Color.pink()
-                )
-                embed.set_image(url=gif_url)
-                if member.id != 1025969591165403146:
-                    embed.set_footer(text = "cuddle unperson too :>")
-                else:
-                    embed.set_footer(text = "keep cuddling unperson >_<")
+            await ctx.send(f"You need to mention someone to {verb}!")
+            return
 
-                await ctx.send(embed=embed)
-            else:
-                await ctx.send("No cuddles for you!")
+        gif_url = await self.get_gif(search_term)
+        if gif_url is None:
+            await ctx.send(failure)
+            return
 
-    # hug
-    @commands.command(name="hug", help="Hugs the mentioned user!")
-    async def hug(self, ctx, member: discord.Member = None):
-        if member is None:
-            await ctx.send("You need to mention someone to hug!")
-            return # exit the command early to prevent further errors
-        else:
-            gif_url = self.get_gif("cute hug anime") # fetch a random cuddle anime gif
-            if gif_url:
-                embed = discord.Embed(
-                    description = f"{ctx.author.name} hugs {member.name}",
-                    color = discord.Color.pink()
-                )
-                embed.set_image(url=gif_url)
-                if member.id != 1025969591165403146:
-                    embed.set_footer(text = "hug unperson too :>")
-                else:
-                    embed.set_footer(text = "keep hugging unperson >_<")
+        embed = discord.Embed(
+            description=f"{ctx.author.name} {sentence} {member.name}",
+            color=discord.Color.pink(),
+        )
+        embed.set_image(url=gif_url)
+        embed.set_footer(
+            text=footer_other if member.id != 1025969591165403146 else footer_self
+        )
+        await ctx.send(embed=embed)
 
-                await ctx.send(embed=embed)
-            else:
-                await ctx.send("No hugs for you!")
+    # ------------------------------------------------------------------
+    # Commands
+    # ------------------------------------------------------------------
 
-    # kiss
-    @commands.command(name="kiss", help="Kisses the mentioned user!")
-    async def kiss(self, ctx, member: discord.Member = None):
-        if member is None:
-            await ctx.send("You need to mention someone to kiss!")
-            return # exit the command early to prevent further errors
-        else:
-            gif_url = self.get_gif("cute kiss anime") # fetch a random cuddle anime gif
-            if gif_url:
-                embed = discord.Embed(
-                    description = f"{ctx.author.name} kisses {member.name}",
-                    color = discord.Color.pink()
-                )
-                embed.set_image(url=gif_url)
-                if member.id != 1025969591165403146:
-                    embed.set_footer(text = "kiss unperson too :>")
-                else:
-                    embed.set_footer(text = "unperson loves kissies >_<")
+    @commands.hybrid_command(description="Cuddle the mentioned user!")
+    async def cuddle(
+        self, ctx: commands.Context, member: Optional[discord.Member] = None
+    ) -> None:
+        await self._action(
+            ctx,
+            member,
+            "cuddle",
+            "cuddles",
+            "cute cuddle anime",
+            "cuddle unperson too :>",
+            "keep cuddling unperson >_<",
+            "No cuddles for you!",
+        )
 
-                await ctx.send(embed=embed)
-            else:
-                await ctx.send("No kissies for you!")
+    @commands.hybrid_command(description="Hug the mentioned user!")
+    async def hug(
+        self, ctx: commands.Context, member: Optional[discord.Member] = None
+    ) -> None:
+        await self._action(
+            ctx,
+            member,
+            "hug",
+            "hugs",
+            "cute hug anime",
+            "hug unperson too :>",
+            "keep hugging unperson >_<",
+            "No hugs for you!",
+        )
 
-    # bonk
-    @commands.command(name="bonk", help="Bonks the mentioned user!")
-    async def bonk(self, ctx, member: discord.Member = None):
-        if member is None:
-            await ctx.send("You need to mention someone to bonk!")
-            return # exit the command early to prevent further errors
-        else:
-            gif_url = self.get_gif("bonk anime") # fetch a random cuddle anime gif
-            if gif_url:
-                embed = discord.Embed(
-                    description = f"{ctx.author.name} bonks {member.name}",
-                    color = discord.Color.pink()
-                )
-                embed.set_image(url=gif_url)
-                if member.id != 1025969591165403146:
-                    embed.set_footer(text = "bonk keto :>")
-                else:
-                    embed.set_footer(text = "don't bonk unperson u nub!")
+    @commands.hybrid_command(description="Kiss the mentioned user!")
+    async def kiss(
+        self, ctx: commands.Context, member: Optional[discord.Member] = None
+    ) -> None:
+        await self._action(
+            ctx,
+            member,
+            "kiss",
+            "kisses",
+            "cute kiss anime",
+            "kiss unperson too :>",
+            "unperson loves kissies >_<",
+            "No kissies for you!",
+        )
 
-                await ctx.send(embed=embed)
-            else:
-                await ctx.send("No bonks for you!")
+    @commands.hybrid_command(description="Bonk the mentioned user!")
+    async def bonk(
+        self, ctx: commands.Context, member: Optional[discord.Member] = None
+    ) -> None:
+        await self._action(
+            ctx,
+            member,
+            "bonk",
+            "bonks",
+            "bonk anime",
+            "bonk keto :>",
+            "don't bonk unperson u nub!",
+            "No bonks for you!",
+        )
 
-    # bully
-    @commands.command(name="bully", help="Bullies the mentioned user!")
-    async def bully(self, ctx, member: discord.Member = None):
-        if member is None:
-            await ctx.send("You need to mention someone to bonk!")
-            return # exit the command early to prevent further errors
-        else:
-            gif_url = self.get_gif("bullying anime") # fetch a random cuddle anime gif
-            if gif_url:
-                embed = discord.Embed(
-                    description = f"{ctx.author.name} bullies {member.name}",
-                    color = discord.Color.pink()
-                )
-                embed.set_image(url=gif_url)
-                if member.id != 1025969591165403146:
-                    embed.set_footer(text = "bully keto :>")
-                else:
-                    embed.set_footer(text = "oi don't bully unperson u nub!")
+    @commands.hybrid_command(description="Bully the mentioned user!")
+    async def bully(
+        self, ctx: commands.Context, member: Optional[discord.Member] = None
+    ) -> None:
+        await self._action(
+            ctx,
+            member,
+            "bully",
+            "bullies",
+            "bullying anime",
+            "bully keto :>",
+            "oi don't bully unperson u nub!",
+            "No bullying for you!",
+        )
 
-                await ctx.send(embed=embed)
-            else:
-                await ctx.send("No bullying for you!")
-                
-    # shoot
-    @commands.command(name="shoot", help="shoots the mentioned user!")
-    async def shoot(self, ctx, member: discord.Member = None):
-        if member is None:
-            await ctx.send("You need to mention someone to kill!")
-            return # exit the command early to prevent further errors
-        else:
-            gif_url = self.get_gif("anime gun shoot") # fetch a random cuddle anime gif
-            if gif_url:
-                embed = discord.Embed(
-                    description = f"{ctx.author.name} shot {member.name}",
-                    color = discord.Color.pink()
-                )
-                embed.set_image(url=gif_url)
-                if member.id != 1025969591165403146:
-                    embed.set_footer(text = "shoot keto :>")
-                else:
-                    embed.set_footer(text = "shooting unperson? how cute...")
+    @commands.hybrid_command(description="Shoot the mentioned user!")
+    async def shoot(
+        self, ctx: commands.Context, member: Optional[discord.Member] = None
+    ) -> None:
+        await self._action(
+            ctx,
+            member,
+            "shoot",
+            "shot",
+            "anime gun shoot",
+            "shoot keto :>",
+            "shooting unperson? how cute...",
+            "You don't even have a gun nub!",
+        )
 
-                await ctx.send(embed=embed)
-            else:
-                await ctx.send("You don't even have a gun nub!")
-
-    # pat
-    @commands.command(name="pat", help="pats the mentioned user!")
-    async def pat(self, ctx, member: discord.Member = None):
-        if member is None:
-            await ctx.send("You need to mention someone to pat!")
-            return # exit the command early to prevent further errors
-        else:
-            gif_url = self.get_gif("cute anime pats") # fetch a random paat anime gif
-            if gif_url:
-                embed = discord.Embed(
-                    description = f"{ctx.author.name} shot {member.name}",
-                    color = discord.Color.pink()
-                )
-                embed.set_image(url=gif_url)
-                if member.id != 1025969591165403146:
-                    embed.set_footer(text = "pat unperson :>")
-                else:
-                    embed.set_footer(text = "yay >_<")
-
-                await ctx.send(embed=embed)
-            else:
-                await ctx.send("No pats for you!")
+    @commands.hybrid_command(description="Pat the mentioned user!")
+    async def pat(
+        self, ctx: commands.Context, member: Optional[discord.Member] = None
+    ) -> None:
+        await self._action(
+            ctx,
+            member,
+            "pat",
+            "pats",
+            "cute anime pats",
+            "pat unperson :>",
+            "yay >_<",
+            "No pats for you!",
+        )
 
 
-
-async def setup(bot):
+async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(Actions(bot))
+
