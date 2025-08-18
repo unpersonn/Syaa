@@ -14,6 +14,7 @@ import traceback
 
 import discord
 from discord.ext import commands
+from discord import app_commands
 from dotenv import load_dotenv
 
 
@@ -83,6 +84,42 @@ class SyaaBot(commands.Bot):
             traceback.format_exception(type(error), error, error.__traceback__)
         )
         await ctx.send(f"```py\n{tb}\n```")
+
+    async def on_app_command_error(
+        self, interaction: discord.Interaction, error: app_commands.AppCommandError
+    ) -> None:
+        """Handle errors raised by slash or hybrid commands.
+
+        This mirrors :meth:`on_command_error` so that interactions that fail
+        don't simply time out with "application did not respond".  The error
+        is logged and the traceback is sent back to the user.
+        """
+
+        if isinstance(error, app_commands.CommandNotFound):
+            if interaction.response.is_done():
+                await interaction.followup.send(
+                    "Unknown command.", ephemeral=True
+                )
+            else:
+                await interaction.response.send_message(
+                    "Unknown command.", ephemeral=True
+                )
+            return
+
+        logger.error(
+            "Unhandled exception in app command '%s'",
+            interaction.command.name if interaction.command else "unknown",
+            exc_info=error,
+        )
+        tb = "".join(
+            traceback.format_exception(type(error), error, error.__traceback__)
+        )
+        if interaction.response.is_done():
+            await interaction.followup.send(f"```py\n{tb}\n```", ephemeral=True)
+        else:
+            await interaction.response.send_message(
+                f"```py\n{tb}\n```", ephemeral=True
+            )
 
 
 bot = SyaaBot()
