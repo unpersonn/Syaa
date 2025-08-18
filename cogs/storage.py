@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import sqlite3
 from pathlib import Path
 from typing import List, Tuple
@@ -98,63 +99,79 @@ def get_leaderboard(guild_id: int, limit: int = 10) -> List[Tuple[int, int, int]
         return cursor.fetchall()
 
 
-def record_tictactoe_win(guild_id: int, user_id: int) -> None:
-    """Record a TicTacToe win for the given user."""
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(
-            """
-            INSERT INTO tictactoe_stats (guild_id, user_id, wins, losses)
-            VALUES (?, ?, 1, 0)
-            ON CONFLICT(guild_id, user_id)
-            DO UPDATE SET wins = wins + 1
-            """,
-            (guild_id, user_id),
-        )
-        conn.commit()
+async def record_tictactoe_win(guild_id: int, user_id: int) -> None:
+    """Record a TicTacToe win for the given user without blocking."""
+
+    def task() -> None:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.execute(
+                """
+                INSERT INTO tictactoe_stats (guild_id, user_id, wins, losses)
+                VALUES (?, ?, 1, 0)
+                ON CONFLICT(guild_id, user_id)
+                DO UPDATE SET wins = wins + 1
+                """,
+                (guild_id, user_id),
+            )
+            conn.commit()
+
+    await asyncio.to_thread(task)
 
 
-def record_tictactoe_loss(guild_id: int, user_id: int) -> None:
-    """Record a TicTacToe loss for the given user."""
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(
-            """
-            INSERT INTO tictactoe_stats (guild_id, user_id, wins, losses)
-            VALUES (?, ?, 0, 1)
-            ON CONFLICT(guild_id, user_id)
-            DO UPDATE SET losses = losses + 1
-            """,
-            (guild_id, user_id),
-        )
-        conn.commit()
+async def record_tictactoe_loss(guild_id: int, user_id: int) -> None:
+    """Record a TicTacToe loss for the given user without blocking."""
+
+    def task() -> None:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.execute(
+                """
+                INSERT INTO tictactoe_stats (guild_id, user_id, wins, losses)
+                VALUES (?, ?, 0, 1)
+                ON CONFLICT(guild_id, user_id)
+                DO UPDATE SET losses = losses + 1
+                """,
+                (guild_id, user_id),
+            )
+            conn.commit()
+
+    await asyncio.to_thread(task)
 
 
-def get_tictactoe_user_stats(guild_id: int, user_id: int) -> Tuple[int, int]:
-    """Return TicTacToe wins and losses for ``user_id`` in ``guild_id``."""
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.execute(
-            "SELECT wins, losses FROM tictactoe_stats WHERE guild_id = ? AND user_id = ?",
-            (guild_id, user_id),
-        )
-        row = cursor.fetchone()
-        return (row[0], row[1]) if row else (0, 0)
+async def get_tictactoe_user_stats(guild_id: int, user_id: int) -> Tuple[int, int]:
+    """Return TicTacToe wins and losses for ``user_id`` in ``guild_id`` without blocking."""
+
+    def task() -> Tuple[int, int]:
+        with sqlite3.connect(DB_PATH) as conn:
+            cursor = conn.execute(
+                "SELECT wins, losses FROM tictactoe_stats WHERE guild_id = ? AND user_id = ?",
+                (guild_id, user_id),
+            )
+            row = cursor.fetchone()
+            return (row[0], row[1]) if row else (0, 0)
+
+    return await asyncio.to_thread(task)
 
 
-def get_tictactoe_leaderboard(
+async def get_tictactoe_leaderboard(
     guild_id: int, limit: int = 10
 ) -> List[Tuple[int, int, int]]:
-    """Return the top TicTacToe players in ``guild_id``."""
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.execute(
-            """
-            SELECT user_id, wins, losses
-            FROM tictactoe_stats
-            WHERE guild_id = ?
-            ORDER BY wins DESC, losses ASC
-            LIMIT ?
-            """,
-            (guild_id, limit),
-        )
-        return cursor.fetchall()
+    """Return the top TicTacToe players in ``guild_id`` without blocking."""
+
+    def task() -> List[Tuple[int, int, int]]:
+        with sqlite3.connect(DB_PATH) as conn:
+            cursor = conn.execute(
+                """
+                SELECT user_id, wins, losses
+                FROM tictactoe_stats
+                WHERE guild_id = ?
+                ORDER BY wins DESC, losses ASC
+                LIMIT ?
+                """,
+                (guild_id, limit),
+            )
+            return cursor.fetchall()
+
+    return await asyncio.to_thread(task)
 
 
 # Ensure database exists when module is imported
