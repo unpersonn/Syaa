@@ -71,8 +71,8 @@ class TicTacToeView(discord.ui.View):
             winner_member = self.players[winner]
             loser_member = self.players[winner ^ 1]
             embed.description = f"{winner_member.mention} wins!"
-            record_tictactoe_win(guild_id, winner_member.id)
-            record_tictactoe_loss(guild_id, loser_member.id)
+            await record_tictactoe_win(guild_id, winner_member.id)
+            await record_tictactoe_loss(guild_id, loser_member.id)
             self.stop()
         elif self.is_draw():
             for child in self.children:
@@ -130,13 +130,13 @@ class TicTacToe(commands.Cog):
         guild_id = ctx.guild.id if ctx.guild else 0
 
         if member is not None:
-            wins, losses = get_tictactoe_user_stats(guild_id, member.id)
+            wins, losses = await get_tictactoe_user_stats(guild_id, member.id)
             await ctx.send(
                 f"{member.display_name} has {wins} wins and {losses} losses in Tic Tac Toe."
             )
             return
 
-        leaderboard = get_tictactoe_leaderboard(guild_id)
+        leaderboard = await get_tictactoe_leaderboard(guild_id)
         if not leaderboard:
             await ctx.send("No Tic Tac Toe games have been played yet!")
             return
