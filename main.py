@@ -8,6 +8,7 @@ before the bot connects to Discord.
 
 from __future__ import annotations
 
+import logging
 import os
 import discord
 from discord.ext import commands
@@ -21,6 +22,14 @@ from dotenv import load_dotenv
 load_dotenv()  # Load environment variables from .env file
 TOKEN = os.getenv("DISCORD_TOKEN")
 DEFAULT_PREFIX = "!"
+
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL, logging.INFO),
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+
+logger = logging.getLogger(__name__)
 
 
 class SyaaBot(commands.Bot):
@@ -45,11 +54,29 @@ class SyaaBot(commands.Bot):
         ]:
             try:
                 await self.load_extension(extension)
-            except Exception as exc:  # pragma: no cover - log for debugging
-                print(f"Failed to load {extension}: {exc}")
+            except Exception:  # pragma: no cover - log for debugging
+                logger.exception("Failed to load %s", extension)
 
         # Sync slash commands
         await self.tree.sync()
+
+    async def on_command_error(
+        self, ctx: commands.Context, error: commands.CommandError
+    ) -> None:
+        """Handle errors arising from command invocation."""
+        if hasattr(ctx.command, "on_error"):
+            return
+
+        if isinstance(error, commands.CommandNotFound):
+            await ctx.send("Unknown command.")
+            return
+
+        logger.error(
+            "Unhandled exception in command '%s'",
+            getattr(ctx.command, "name", "unknown"),
+            exc_info=error,
+        )
+        await ctx.send("An unexpected error occurred. Please try again later.")
 
 
 bot = SyaaBot()
@@ -59,7 +86,7 @@ bot = SyaaBot()
 async def on_ready() -> None:
     """Announce successful login and set presence."""
 
-    print(f"{bot.user} has logged in!")
+    logger.info("%s has logged in!", bot.user)
 
     activity = discord.Game(name="with Unperson!")
     await bot.change_presence(status=discord.Status.online, activity=activity)
