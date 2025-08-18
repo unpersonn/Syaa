@@ -8,8 +8,11 @@ before the bot connects to Discord.
 
 from __future__ import annotations
 
+import io
 import logging
 import os
+import traceback
+
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -77,7 +80,16 @@ class SyaaBot(commands.Bot):
             getattr(ctx.command, "name", "unknown"),
             exc_info=error,
         )
-        await ctx.send("An unexpected error occurred. Please try again later.")
+        tb = "".join(
+            traceback.format_exception(type(error), error, error.__traceback__)
+        )
+        if len(tb) > 1900:
+            fp = io.StringIO(tb)
+            await ctx.send(
+                "Error details:", file=discord.File(fp, "traceback.txt")
+            )
+        else:
+            await ctx.send(f"```py\n{tb}\n```")
 
 
 bot = SyaaBot()
