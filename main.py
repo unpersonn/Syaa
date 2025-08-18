@@ -55,6 +55,7 @@ class SyaaBot(commands.Bot):
             "cogs.moderation",
             "cogs.actions",
             "cogs.tictactoe",
+            "cogs.hangman",
         ]:
             try:
                 await self.load_extension(extension)
