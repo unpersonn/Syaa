@@ -54,7 +54,6 @@ class SyaaBot(commands.Bot):
             "cogs.fun",
             "cogs.moderation",
             "cogs.actions",
-            "cogs.tictactoe",
             "cogs.hangman",
         ]:
             try:
