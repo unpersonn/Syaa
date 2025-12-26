@@ -49,6 +49,10 @@ class SyaaBot(commands.Bot):
     async def setup_hook(self) -> None:
         """Load extensions and sync the application command tree."""
 
+        # Initialize Database
+        from database.db import init_db
+        await init_db()
+
         # Load available extensions
         for extension in [
             "cogs.math",

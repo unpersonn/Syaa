@@ -8,8 +8,8 @@ import random
 import discord
 from discord.ext import commands
 
-from utils.ui import SyaaEmbed, SuccessEmbed, ErrorEmbed
-from .storage import get_leaderboard, get_user_stats, record_loss, record_win
+from utils.ui import SyaaEmbed, SuccessEmbed, ErrorEmbed, InfoEmbed
+from .storage import get_leaderboard_async, get_user_stats_async, record_loss, record_win
 
 
 class RPSView(discord.ui.View):
@@ -39,11 +39,11 @@ class RPSView(discord.ui.View):
             or (choice == "scissors" and bot_choice == "paper")
         ):
             result = "You win! 🎉"
-            record_win(self.guild_id, self.user.id)
+            await record_win(self.guild_id, self.user.id)
             color = discord.Color.green()
         else:
             result = "You lose! 💀"
-            record_loss(self.guild_id, self.user.id)
+            await record_loss(self.guild_id, self.user.id)
             color = discord.Color.red()
 
         embed = SyaaEmbed(title="Rock Paper Scissors", color=color)
@@ -105,7 +105,7 @@ class Fun(commands.Cog):
         guild_id = ctx.guild.id if ctx.guild else 0
 
         if member is not None:
-            wins, losses = get_user_stats(guild_id, member.id)
+            wins, losses = await get_user_stats_async(guild_id, member.id)
             embed = SyaaEmbed(title=f"RPS Stats: {member.display_name}")
             embed.add_field(name="Wins", value=str(wins), inline=True)
             embed.add_field(name="Losses", value=str(losses), inline=True)
@@ -113,7 +113,7 @@ class Fun(commands.Cog):
             await ctx.send(embed=embed)
             return
 
-        leaderboard = get_leaderboard(guild_id)
+        leaderboard = await get_leaderboard_async(guild_id)
         if not leaderboard:
             await ctx.send(embed=InfoEmbed("No RPS games have been played yet!"))
             return
