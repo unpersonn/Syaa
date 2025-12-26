@@ -43,6 +43,7 @@ class SyaaBot(commands.Bot):
         super().__init__(
             command_prefix=commands.when_mentioned_or(DEFAULT_PREFIX),
             intents=intents,
+            help_command=None,
         )
 
     async def setup_hook(self) -> None:
@@ -56,6 +57,7 @@ class SyaaBot(commands.Bot):
             "cogs.actions",
             "cogs.hangman",
             "cogs.tictactoe",
+            "cogs.help",
         ]:
             try:
                 await self.load_extension(extension)

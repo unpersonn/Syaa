@@ -64,17 +64,18 @@ class Actions(commands.Cog):
         """Generic helper used by the action commands."""
 
         if member is None:
-            await ctx.send(f"You need to mention someone to {verb}!")
+            await ctx.send(embed=discord.Embed(description=f"You need to mention someone to {verb}!", color=discord.Color.red()))
             return
 
         gif_url = await self.get_gif(search_term)
         if gif_url is None:
-            await ctx.send(failure)
+            await ctx.send(embed=discord.Embed(description=failure, color=discord.Color.red()))
             return
 
-        embed = discord.Embed(
-            description=f"{ctx.author.name} {sentence} {member.name}",
-            color=discord.Color.pink(),
+        from utils.ui import SyaaEmbed # Local import to avoid circular dependency issues if any
+        
+        embed = SyaaEmbed(
+            description=f"**{ctx.author.name}** {sentence} **{member.name}**!",
         )
         embed.set_image(url=gif_url)
         embed.set_footer(

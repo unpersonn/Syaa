@@ -7,6 +7,8 @@ from datetime import timedelta
 import discord
 from discord.ext import commands
 
+from utils.ui import SuccessEmbed, ErrorEmbed
+
 
 class Moderation(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
@@ -17,12 +19,15 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_messages=True)
     async def purge(self, ctx: commands.Context, amount: int) -> None:
         try:
-            await ctx.channel.purge(limit=amount + 1)
-            await ctx.send(f"Deleted {amount} messages.", delete_after=5)
+            deleted = await ctx.channel.purge(limit=amount + 1)
+            # -1 to account for the command message itself
+            actual_deleted = len(deleted) - 1
+            embed = SuccessEmbed(f"Deleted **{actual_deleted if actual_deleted > 0 else 0}** messages.")
+            await ctx.send(embed=embed, delete_after=5)
         except Exception as exc:
-            await ctx.send(f"Failed to delete messages. Error: {exc}")
+            await ctx.send(embed=ErrorEmbed(f"Failed to delete messages.\n`{exc}`"))
 
-    # timeout user (simple version)
+    # timeout user
     @commands.hybrid_command(
         name="timeout",
         description="Timeout a user for a specified duration (in minutes)",
@@ -36,17 +41,18 @@ class Moderation(commands.Cog):
         reason: str = "None",
     ) -> None:
         if not member:
-            await ctx.send("You must mention a user to timeout!")
+            await ctx.send(embed=ErrorEmbed("You must mention a user to timeout!"))
             return
 
         try:
             duration = timedelta(minutes=minutes)
             await member.timeout(duration, reason=reason)
-            await ctx.send(
-                f"{member.name} has been timed out for {minutes} minute(s). Reason: {reason}!"
-            )
+            embed = SuccessEmbed(f"Timed out **{member.mention}** for **{minutes}** minutes.")
+            embed.Add_field(name="Reason", value=reason)
+            embed.set_request_footer(ctx.author)
+            await ctx.send(embed=embed)
         except Exception as exc:
-            await ctx.send(f"Failed to timeout {member.name}. Error: {exc}")
+            await ctx.send(embed=ErrorEmbed(f"Failed to timeout {member.name}.\n`{exc}`"))
 
     # kick user
     @commands.hybrid_command(name="kick", description="Kick a user from the server")
@@ -55,14 +61,17 @@ class Moderation(commands.Cog):
         self, ctx: commands.Context, member: discord.Member, reason: str = "None"
     ) -> None:
         if not member:
-            await ctx.send("You must mention a user to kick!")
-            return
+             await ctx.send(embed=ErrorEmbed("You must mention a user to kick!"))
+             return
 
         try:
             await member.kick(reason=reason)
-            await ctx.send(f"{member.name} has been kicked!")
+            embed = SuccessEmbed(f"Kicked **{member.display_name}**.")
+            embed.add_field(name="Reason", value=reason)
+            embed.set_request_footer(ctx.author)
+            await ctx.send(embed=embed)
         except Exception as exc:
-            await ctx.send(f"Failed to kick {member.name}. Reason: {exc}")
+            await ctx.send(embed=ErrorEmbed(f"Failed to kick {member.name}.\n`{exc}`"))
 
     # ban member
     @commands.hybrid_command(name="ban", description="Ban a user from the server")
@@ -71,14 +80,17 @@ class Moderation(commands.Cog):
         self, ctx: commands.Context, member: discord.Member, reason: str = "None"
     ) -> None:
         if not member:
-            await ctx.send("You must mention a user to kick!")
+            await ctx.send(embed=ErrorEmbed("You must mention a user to ban!"))
             return
 
         try:
             await member.ban(reason=reason)
-            await ctx.send(f"{member.name} has been banned!")
+            embed = SuccessEmbed(f"Banned **{member.display_name}**.")
+            embed.add_field(name="Reason", value=reason)
+            embed.set_request_footer(ctx.author)
+            await ctx.send(embed=embed)
         except Exception as exc:
-            await ctx.send(f"Failed to ban {member.name}. Reason: {exc}")
+            await ctx.send(embed=ErrorEmbed(f"Failed to ban {member.name}.\n`{exc}`"))
 
 
 async def setup(bot: commands.Bot) -> None:
